@@ -3080,9 +3080,15 @@
                 ctx.fill();
             }
 
-            // 保存为图片（使用纯Canvas绘制，避免污染问题）
-            async function saveAsImage() {
-                if (!currentModalData) return;
+            // 检测是否在微信环境中
+            function isWeChatBrowser() {
+                const ua = navigator.userAgent.toLowerCase();
+                return /MicroMessenger/i.test(ua);
+            }
+
+            // 生成运势卡片图片（返回dataURL）
+            async function generateCardImage() {
+                if (!currentModalData) return null;
 
                 try {
                     const config = RARITY_CONFIG[currentModalData.rarity] || RARITY_CONFIG.N;
@@ -3197,14 +3203,61 @@
                         console.error('二维码加载或绘制失败:', qrErr);
                     }
 
-                    // 下载图片
-                    const link = document.createElement('a');
-                    const fileName = `天马灵境_${currentModalData.date}_${currentModalData.name}.png`;
-                    link.download = fileName;
-                    link.href = canvas.toDataURL('image/png');
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                    return canvas.toDataURL('image/png');
+                } catch (err) {
+                    console.error('生成图片失败:', err);
+                    return null;
+                }
+            }
+
+            // 微信环境下显示图片供长按保存
+            function showImageForLongPress(dataUrl) {
+                // 创建全屏遮罩显示图片
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+
+                const tip = document.createElement('div');
+                tip.style.cssText = 'color:#ffd700;font-size:16px;margin-bottom:15px;text-align:center;text-shadow:0 0 10px rgba(255,215,0,0.5);';
+                tip.innerHTML = '📱 <b>长按下方图片保存到手机</b><br><span style="font-size:13px;color:#aaa;">点击空白处关闭</span>';
+
+                const img = document.createElement('img');
+                img.src = dataUrl;
+                img.style.cssText = 'max-width:90%;max-height:75vh;border-radius:16px;box-shadow:0 0 40px rgba(255,215,0,0.3);';
+
+                overlay.appendChild(tip);
+                overlay.appendChild(img);
+                document.body.appendChild(overlay);
+
+                // 点击关闭
+                overlay.addEventListener('click', () => {
+                    overlay.remove();
+                });
+            }
+
+            // 保存为图片（根据环境选择不同方式）
+            async function saveAsImage() {
+                if (!currentModalData) return;
+
+                try {
+                    const dataUrl = await generateCardImage();
+                    if (!dataUrl) {
+                        alert('生成图片失败，请重试');
+                        return;
+                    }
+
+                    // 微信环境：显示图片让用户长按保存
+                    if (isWeChatBrowser()) {
+                        showImageForLongPress(dataUrl);
+                    } else {
+                        // 浏览器环境：直接下载
+                        const link = document.createElement('a');
+                        const fileName = `天马灵境_${currentModalData.date}_${currentModalData.name}.png`;
+                        link.download = fileName;
+                        link.href = dataUrl;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
                 } catch (err) {
                     console.error('保存图片失败:', err);
                     alert('保存图片失败，请重试');
