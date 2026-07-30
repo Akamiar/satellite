@@ -1430,32 +1430,19 @@
             const cal = getLunarAndCalendar();
             const fortune = cal.fortune;
 
-            let baseProbSSR = RARITY_CONFIG.SSR.prob;
-            let baseProbSR = RARITY_CONFIG.SR.prob;
-            let baseProbR = RARITY_CONFIG.R.prob;
+            // 基础概率（SSR 10%, SR 30%, R 50%, N 10%）
+            // fortune (0.8~1.2) 调整 SSR/SR 概率，R/N 保持基线
+            const rawSSR = RARITY_CONFIG.SSR.prob * fortune;
+            const rawSR = RARITY_CONFIG.SR.prob * fortune;
+            const rawR = RARITY_CONFIG.R.prob;
+            const rawN = RARITY_CONFIG.N.prob;
 
-            let adjustedSSR = baseProbSSR * fortune;
-            let adjustedSR = baseProbSR * fortune;
-            let adjustedR = baseProbR;
-            let sum = adjustedSSR + adjustedSR + adjustedR;
-            if (sum > 0) {
-                adjustedSSR = adjustedSSR / sum;
-                adjustedSR = adjustedSR / sum;
-                adjustedR = adjustedR / sum;
-            } else {
-                adjustedSSR = 0.10;
-                adjustedSR = 0.30;
-                adjustedR = 0.50;
-            }
-            let adjustedN = 1 - adjustedSSR - adjustedSR - adjustedR;
-            if (adjustedN < 0) adjustedN = 0;
-            let total = adjustedSSR + adjustedSR + adjustedR + adjustedN;
-            if (total > 0) {
-                adjustedSSR /= total;
-                adjustedSR /= total;
-                adjustedR /= total;
-                adjustedN /= total;
-            }
+            // 四者一起归一化
+            const total = rawSSR + rawSR + rawR + rawN;
+            const adjustedSSR = rawSSR / total;
+            const adjustedSR = rawSR / total;
+            const adjustedR = rawR / total;
+            const adjustedN = rawN / total;
 
             let r = Math.random();
             let selectedRarity = 'N';
