@@ -195,32 +195,32 @@
 
         @media (max-width: 480px) {
             #switchBtn {
-                top: 12px;
-                right: 12px;
-                padding: 6px 12px;
-                font-size: 0.7rem;
+                top: 10px;
+                right: 10px;
+                padding: 8px 14px;
+                font-size: 0.8rem;
             }
 
             #switchBtn .label {
-                font-size: 0.65rem;
+                font-size: 0.75rem;
             }
 
             #fortuneBtn {
-                top: 12px;
-                right: 75px;
-                padding: 6px 10px;
-                font-size: 0.65rem;
+                top: 10px;
+                right: 85px;
+                padding: 8px 12px;
+                font-size: 0.75rem;
             }
 
             #fortuneBtn .label {
-                font-size: 0.6rem;
+                font-size: 0.7rem;
             }
 
             #backBtn {
-                top: 12px;
-                right: 12px;
-                padding: 6px 12px;
-                font-size: 0.7rem;
+                top: 10px;
+                right: 10px;
+                padding: 8px 14px;
+                font-size: 0.8rem;
             }
         }
 
@@ -1165,82 +1165,143 @@
         /* ===== 响应式 ===== */
         @media (max-width: 480px) {
             .tm-card {
-                padding: 6px 8px 12px;
+                padding: 16px 14px 20px;
                 border-radius: 0;
             }
 
             .tm-card h1 {
-                font-size: 0.95rem;
+                font-size: 1rem;
+                margin-bottom: 6px;
+            }
+
+            .tm-card .tm-subtitle {
+                font-size: 0.78rem;
+                margin-bottom: 14px;
+            }
+
+            .clock-wrapper,
+            .compass-wrapper {
+                max-width: min(55vh, 88vw);
+                margin: 0 auto 16px;
             }
 
             .message-box .emotion {
-                font-size: 0.85rem;
+                font-size: 0.92rem;
+                line-height: 1.6;
             }
 
             .time-display {
-                font-size: 0.85rem;
-                padding: 3px 10px;
+                font-size: 0.95rem;
+                padding: 5px 16px;
+                margin: 6px auto 10px;
+            }
+
+            .info-grid {
+                gap: 12px 12px;
+                margin: 14px 0 16px;
+            }
+
+            .info-item {
+                padding: 8px 14px;
+            }
+
+            .info-item .info-label {
+                font-size: 0.6rem;
             }
 
             .info-item .info-value {
-                font-size: 0.9rem;
+                font-size: 0.95rem;
+            }
+
+            .elevation-bar {
+                margin: 6px 0 10px;
+                height: 6px;
+            }
+
+            .elevation-label {
+                font-size: 0.65rem;
+                margin-bottom: 4px;
             }
 
             .time-display-compass {
-                font-size: 0.6rem;
-                gap: 10px;
+                font-size: 0.68rem;
+                gap: 12px;
                 flex-wrap: wrap;
+                margin-top: 8px;
+            }
+
+            .message-box {
+                margin: 12px 0 6px;
+                padding: 6px 14px;
+            }
+
+            .flight-stats {
+                margin-top: 14px !important;
+                font-size: 0.8rem !important;
+            }
+
+            .tm-view-btn {
+                margin-top: 12px;
+                padding: 8px 18px;
+                font-size: 0.85rem;
             }
 
             /* 运势页面响应式 */
             .fortune-app {
-                padding: 16px 12px 20px;
+                padding: 20px 14px 24px;
                 border-radius: 28px;
             }
 
+            .fortune-header {
+                margin-bottom: 20px;
+                padding-bottom: 16px;
+            }
+
             .fortune-title {
-                font-size: 18px;
-                letter-spacing: 2px;
+                font-size: 20px;
+                letter-spacing: 3px;
             }
 
             .fortune-header-right .fortune-time {
-                font-size: 13px;
+                font-size: 14px;
             }
 
             .fortune-card-wrapper {
-                max-width: 300px;
+                max-width: 320px;
+                margin-bottom: 24px;
             }
 
             .fortune-card-front .fortune-card-name {
-                font-size: 22px;
-            }
-
-            .fortune-card-front .fortune-card-message {
-                font-size: 14px;
-            }
-
-            .fortune-draw-btn {
-                font-size: 17px;
-                padding: 14px 20px;
-                max-width: 240px;
-                letter-spacing: 4px;
-            }
-
-            .fortune-history-item {
-                font-size: 11px;
-                padding: 3px 10px;
-            }
-
-            .fortune-modal-box {
-                padding: 24px 18px;
-            }
-
-            .fortune-modal-name {
                 font-size: 24px;
             }
 
+            .fortune-card-front .fortune-card-message {
+                font-size: 15px;
+                line-height: 1.7;
+            }
+
+            .fortune-draw-btn {
+                font-size: 18px;
+                padding: 15px 24px;
+                max-width: 260px;
+                letter-spacing: 5px;
+            }
+
+            .fortune-history-item {
+                font-size: 12px;
+                padding: 5px 12px;
+            }
+
+            .fortune-modal-box {
+                padding: 28px 20px;
+            }
+
+            .fortune-modal-name {
+                font-size: 26px;
+            }
+
             .fortune-modal-message {
-                font-size: 14px;
+                font-size: 15px;
             }
         }
 
@@ -1248,35 +1309,35 @@
 
             .clock-wrapper,
             .compass-wrapper {
-                max-width: min(40vh, 40vw);
+                max-width: min(42vh, 70vw);
             }
 
             .tm-card {
-                padding: 4px 8px 8px;
+                padding: 10px 12px 14px;
             }
 
             .info-grid {
-                gap: 6px 10px;
+                gap: 8px 12px;
             }
         }
 
         @media (max-width: 400px) {
             .fortune-card-wrapper {
-                max-width: 240px;
+                max-width: 260px;
             }
 
             .fortune-card-front .fortune-card-name {
-                font-size: 18px;
+                font-size: 20px;
             }
 
             .fortune-card-front .fortune-card-message {
-                font-size: 12px;
+                font-size: 13px;
                 line-height: 1.6;
             }
 
             .fortune-card-front .fortune-rarity-badge {
                 font-size: 11px;
-                padding: 2px 10px;
+                padding: 3px 10px;
                 top: 12px;
                 right: 12px;
             }
