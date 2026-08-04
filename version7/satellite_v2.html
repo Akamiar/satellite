@@ -1,0 +1,2886 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>赤焰天马 · 此刻方位</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+    </script>
+    <style>
+        /* ===== 全局重置 & 共用样式 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0a0e27;
+            color: #c0d0ff;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #stars-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ===== 今日运势按钮（右上角） ===== */
+        #fortuneBtn {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 999;
+            background: rgba(40, 30, 60, 0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(180, 150, 200, 0.3);
+            border-radius: 30px;
+            padding: 8px 16px;
+            color: #e0d0ff;
+            font-size: 0.85rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+        }
+
+        #fortuneBtn:hover {
+            background: rgba(60, 50, 100, 0.75);
+            border-color: rgba(200, 180, 255, 0.5);
+            box-shadow: 0 4px 30px rgba(180, 150, 255, 0.2);
+            transform: scale(1.03);
+        }
+
+        #fortuneBtn .icon {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        #fortuneBtn .label {
+            font-size: 0.75rem;
+            opacity: 0.85;
+        }
+
+        /* ===== 返回按钮（运势页面） ===== */
+        #backBtn {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 999;
+            background: rgba(40, 30, 60, 0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(180, 150, 200, 0.3);
+            border-radius: 30px;
+            padding: 8px 16px;
+            color: #e0d0ff;
+            font-size: 0.85rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            display: none;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+        }
+
+        #backBtn:hover {
+            background: rgba(60, 50, 100, 0.75);
+            border-color: rgba(200, 180, 255, 0.5);
+            box-shadow: 0 4px 30px rgba(180, 150, 255, 0.2);
+            transform: scale(1.03);
+        }
+
+        #backBtn .icon {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        #backBtn .label {
+            font-size: 0.75rem;
+            opacity: 0.85;
+        }
+
+        @media (max-width: 480px) {
+            #fortuneBtn {
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 0.75rem;
+            }
+
+            #fortuneBtn .label {
+                font-size: 0.7rem;
+            }
+
+            #backBtn {
+                top: 10px;
+                right: 10px;
+                padding: 8px 14px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* ===== 页面容器 ===== */
+        .page-container {
+            position: relative;
+            z-index: 1;
+            display: none;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .page-container.active {
+            display: flex;
+        }
+
+        /* ===== 天马罗盘卡片样式 ===== */
+        .tm-card {
+            background: transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border: none;
+            border-radius: 0;
+            padding: 8px 12px 16px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: none;
+            text-align: center;
+            animation: tmFadeIn 0.4s ease;
+        }
+
+        @keyframes tmFadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.96);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .tm-card h1 {
+            font-size: 1.05rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: #ffb0b0;
+            text-shadow: none;
+            margin-bottom: 4px;
+        }
+
+        .tm-card .tm-subtitle {
+            font-size: 0.72rem;
+            color: #cc8a8a;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            border-bottom: none;
+            padding-bottom: 4px;
+        }
+
+        /* ===== 罗盘样式 ===== */
+        .compass-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1/1;
+            max-width: min(45vh, 45vw);
+            margin: 0 auto 12px;
+        }
+
+        #compass-canvas,
+        #compass-full-canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(200, 50, 50, 0.15), inset 0 0 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 14px;
+            margin: 10px 0 12px;
+            text-align: left;
+        }
+
+        .info-item {
+            background: rgba(40, 10, 10, 0.3);
+            border-radius: 20px;
+            padding: 6px 14px;
+            border: 1px solid rgba(180, 80, 80, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-item .info-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #b08080;
+        }
+
+        .info-item .info-value {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #ffd0d0;
+            letter-spacing: 0.5px;
+        }
+
+        .info-item .info-value small {
+            font-size: 0.7rem;
+            color: #cc9a9a;
+            margin-left: 4px;
+        }
+
+        .elevation-bar {
+            background: rgba(40, 10, 10, 0.4);
+            border-radius: 20px;
+            height: 4px;
+            width: 100%;
+            margin: 4px 0 8px;
+            overflow: hidden;
+            border: none;
+        }
+
+        .elevation-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #b04040, #ff8080);
+            border-radius: 20px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 8px rgba(255, 80, 80, 0.2);
+        }
+
+        .elevation-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: #b08080;
+            margin-top: -2px;
+        }
+
+        .time-display-compass {
+            font-size: 0.65rem;
+            color: #b08080;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        .time-display-compass span {
+            background: rgba(40, 10, 10, 0.25);
+            padding: 1px 10px;
+            border-radius: 30px;
+            border: 1px solid rgba(180, 80, 80, 0.06);
+        }
+
+        .message-box {
+            background: transparent;
+            border-radius: 0;
+            padding: 4px 12px;
+            margin: 8px 0 4px;
+            border-left: none;
+            border-top: 1px solid rgba(180, 80, 80, 0.12);
+            box-shadow: none;
+        }
+
+        .message-box .emotion {
+            font-size: 0.88rem;
+            font-weight: 300;
+            line-height: 1.5;
+            color: #ffe0e0;
+            letter-spacing: 0.3px;
+        }
+
+        .footer-note {
+            font-size: 0.65rem;
+            color: #806060;
+            margin-top: 6px;
+            letter-spacing: 0.8px;
+            opacity: 0.6;
+        }
+
+        /* ===== 全景/仰视按钮（卡片内部） ===== */
+        .tm-view-btn {
+            margin-top: 8px;
+            background: rgba(40, 10, 10, 0.35);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(180, 80, 80, 0.2);
+            border-radius: 30px;
+            padding: 6px 16px;
+            color: #ffd0d0;
+            font-size: 0.78rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .tm-view-btn:hover {
+            background: rgba(60, 20, 20, 0.55);
+            border-color: rgba(200, 100, 100, 0.35);
+            box-shadow: 0 4px 20px rgba(200, 50, 50, 0.1);
+            transform: scale(1.03);
+        }
+
+        .tm-view-btn .icon {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .tm-view-btn .label {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        /* ===== 页面3：今日运势（抽卡） ===== */
+        body.fortune-page {
+            overflow: auto;
+            align-items: flex-start;
+            padding-top: 60px;
+        }
+
+        .fortune-app {
+            max-width: 720px;
+            width: 100%;
+            background: rgba(18, 14, 36, 0.55);
+            backdrop-filter: blur(8px);
+            border-radius: 36px;
+            padding: 24px 22px 28px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 215, 0, 0.06);
+            transition: all 0.3s;
+            position: relative;
+            animation: tmFadeIn 0.4s ease;
+        }
+
+        .fortune-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            margin-bottom: 24px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.10);
+        }
+
+        .fortune-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .fortune-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, #f6e6a6, #f0c850, #d4a030);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.15);
+        }
+
+        .fortune-sub {
+            font-size: 13px;
+            color: rgba(200, 190, 220, 0.6);
+            letter-spacing: 2px;
+            -webkit-text-fill-color: rgba(200, 190, 220, 0.6);
+        }
+
+        .fortune-header-right {
+            text-align: right;
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(200, 190, 220, 0.7);
+        }
+
+        .fortune-header-right .fortune-time {
+            font-size: 15px;
+            font-weight: 600;
+            color: #d4c8e8;
+        }
+
+        .fortune-header-right .fortune-date {
+            font-size: 12px;
+            color: rgba(200, 190, 220, 0.5);
+        }
+
+        .fortune-card-wrapper {
+            perspective: 1200px;
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto 28px;
+            aspect-ratio: 3 / 4;
+            cursor: default;
+        }
+
+        .fortune-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            transform-style: preserve-3d;
+            border-radius: 28px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+        }
+
+        .fortune-card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .fortune-card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 20px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .fortune-card-back {
+            background: radial-gradient(ellipse at 30% 20%, #2a1f4a, #0f0b1e 80%);
+            border: 2px solid rgba(255, 215, 0, 0.15);
+            box-shadow: inset 0 0 80px rgba(255, 215, 0, 0.04);
+            transform: rotateY(0deg);
+        }
+
+        .fortune-card-back::before {
+            content: '';
+            position: absolute;
+            inset: 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.06);
+            pointer-events: none;
+        }
+
+        .fortune-card-back .back-pattern {
+            font-size: 72px;
+            letter-spacing: 16px;
+            opacity: 0.15;
+            font-weight: 300;
+            line-height: 1;
+            background: linear-gradient(135deg, #f0c850, #d4a030);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 60px rgba(255, 215, 0, 0.05);
+            user-select: none;
+        }
+
+        .fortune-card-back .back-label {
+            margin-top: 16px;
+            font-size: 14px;
+            color: rgba(255, 215, 0, 0.25);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+
+        .fortune-card-back .back-shine {
+            position: absolute;
+            top: -40%;
+            left: -40%;
+            width: 180%;
+            height: 180%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 215, 0, 0.04), transparent 60%);
+            pointer-events: none;
+            animation: shimmer 6s ease-in-out infinite alternate;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translate(-10%, -10%) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(10%, 10%) rotate(10deg);
+            }
+        }
+
+        .fortune-card-front {
+            transform: rotateY(180deg);
+            background: radial-gradient(ellipse at 50% 30%, #1f1a3a, #0b0818 90%);
+            border: 2px solid rgba(255, 215, 0, 0.10);
+            box-shadow: inset 0 0 100px rgba(255, 215, 0, 0.02);
+            justify-content: space-between;
+            padding: 28px 22px 24px;
+        }
+
+        .fortune-card-front .fortune-rarity-badge {
+            position: absolute;
+            top: 16px;
+            right: 18px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            padding: 4px 14px;
+            border-radius: 40px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .fortune-card-front .fortune-card-name {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin-top: 8px;
+            line-height: 1.2;
+            text-shadow: 0 0 40px rgba(255, 215, 0, 0.08);
+        }
+
+        .fortune-card-front .fortune-card-divider {
+            width: 48px;
+            height: 2px;
+            margin: 10px auto 14px;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+        }
+
+        .fortune-card-front .fortune-card-message {
+            font-size: 16px;
+            line-height: 1.8;
+            color: rgba(220, 210, 240, 0.85);
+            padding: 0 4px;
+            max-width: 90%;
+            font-style: italic;
+            letter-spacing: 0.5px;
+        }
+
+        .fortune-card-front .fortune-card-footer {
+            font-size: 12px;
+            color: rgba(200, 190, 220, 0.3);
+            letter-spacing: 2px;
+            margin-top: 8px;
+        }
+
+        .fortune-card-front .fortune-card-glow {
+            position: absolute;
+            inset: 0;
+            border-radius: 28px;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 120%, rgba(255, 215, 0, 0.04), transparent 70%);
+        }
+
+        /* 稀有度配色 */
+        .fortune-rarity-ssr .fortune-rarity-badge {
+            color: #ffd700;
+            border-color: rgba(255, 215, 0, 0.3);
+            background: rgba(255, 215, 0, 0.08);
+            box-shadow: 0 0 24px rgba(255, 215, 0, 0.08);
+        }
+
+        .fortune-rarity-ssr .fortune-card-name {
+            color: #ffd700;
+            text-shadow: 0 0 40px rgba(255, 215, 0, 0.15);
+        }
+
+        .fortune-rarity-ssr .fortune-card-divider {
+            background: linear-gradient(90deg, transparent, #ffd700, transparent);
+        }
+
+        .fortune-rarity-ssr .fortune-card-front {
+            border-color: rgba(255, 215, 0, 0.20);
+            box-shadow: inset 0 0 80px rgba(255, 215, 0, 0.04), 0 0 60px rgba(255, 215, 0, 0.03);
+        }
+
+        .fortune-rarity-sr .fortune-rarity-badge {
+            color: #b388ff;
+            border-color: rgba(179, 136, 255, 0.25);
+            background: rgba(179, 136, 255, 0.06);
+        }
+
+        .fortune-rarity-sr .fortune-card-name {
+            color: #b388ff;
+            text-shadow: 0 0 30px rgba(179, 136, 255, 0.10);
+        }
+
+        .fortune-rarity-sr .fortune-card-divider {
+            background: linear-gradient(90deg, transparent, #b388ff, transparent);
+        }
+
+        .fortune-rarity-sr .fortune-card-front {
+            border-color: rgba(179, 136, 255, 0.12);
+            box-shadow: inset 0 0 60px rgba(179, 136, 255, 0.02);
+        }
+
+        .fortune-rarity-r .fortune-rarity-badge {
+            color: #64b5f6;
+            border-color: rgba(100, 181, 246, 0.20);
+            background: rgba(100, 181, 246, 0.04);
+        }
+
+        .fortune-rarity-r .fortune-card-name {
+            color: #64b5f6;
+            text-shadow: 0 0 20px rgba(100, 181, 246, 0.06);
+        }
+
+        .fortune-rarity-r .fortune-card-divider {
+            background: linear-gradient(90deg, transparent, #64b5f6, transparent);
+        }
+
+        .fortune-rarity-n .fortune-rarity-badge {
+            color: #90a4ae;
+            border-color: rgba(144, 164, 174, 0.15);
+            background: rgba(144, 164, 174, 0.03);
+        }
+
+        .fortune-rarity-n .fortune-card-name {
+            color: #b0bec5;
+            text-shadow: 0 0 12px rgba(144, 164, 174, 0.04);
+        }
+
+        .fortune-rarity-n .fortune-card-divider {
+            background: linear-gradient(90deg, transparent, #90a4ae, transparent);
+        }
+
+        .fortune-draw-btn {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto 20px;
+            padding: 16px 24px;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            font-family: inherit;
+            background: linear-gradient(135deg, #f6e6a6, #e8b830);
+            color: #1a1035;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 24px rgba(255, 215, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .fortune-draw-btn:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 40px rgba(255, 215, 0, 0.25);
+        }
+
+        .fortune-draw-btn:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .fortune-draw-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .fortune-draw-btn .fortune-btn-shine {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2), transparent 60%);
+            pointer-events: none;
+            animation: btnShine 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes btnShine {
+            0% {
+                transform: translate(-10%, -10%);
+            }
+
+            100% {
+                transform: translate(10%, 10%);
+            }
+        }
+
+        .fortune-draw-btn.today-done {
+            background: linear-gradient(135deg, #6a6a7a, #4a4a5a);
+            color: #a0a0b0;
+            box-shadow: none;
+            letter-spacing: 2px;
+        }
+
+        .fortune-draw-btn.today-done .fortune-btn-shine {
+            display: none;
+        }
+
+        .fortune-history {
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .fortune-history-title {
+            font-size: 13px;
+            color: rgba(200, 190, 220, 0.3);
+            letter-spacing: 4px;
+            text-align: center;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .fortune-history-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            min-height: 34px;
+        }
+
+        .fortune-history-item {
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: rgba(200, 190, 220, 0.5);
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .fortune-history-item:hover {
+            background: rgba(255, 215, 0, 0.06);
+            border-color: rgba(255, 215, 0, 0.15);
+            transform: scale(1.02);
+        }
+
+        .fortune-history-item .h-rarity {
+            font-weight: 700;
+            font-size: 11px;
+        }
+
+        .fortune-history-item .h-name {
+            max-width: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .fortune-history-empty {
+            font-size: 12px;
+            color: rgba(200, 190, 220, 0.15);
+            letter-spacing: 2px;
+        }
+
+        /* 模态框 */
+        .fortune-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: tmFadeIn 0.3s ease;
+        }
+
+        .fortune-modal-overlay.active {
+            display: flex;
+        }
+
+        .fortune-modal-box {
+            max-width: 420px;
+            width: 90%;
+            background: radial-gradient(ellipse at 50% 30%, #1f1a3a, #0b0818 90%);
+            border-radius: 32px;
+            padding: 32px 28px;
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            position: relative;
+            animation: modalPop 0.4s ease;
+        }
+
+        @keyframes modalPop {
+            0% {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .fortune-modal-close {
+            position: absolute;
+            top: 12px;
+            right: 18px;
+            font-size: 24px;
+            color: rgba(200, 190, 220, 0.3);
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.3s;
+            font-family: inherit;
+        }
+
+        .fortune-modal-close:hover {
+            color: #f0c850;
+        }
+
+        .fortune-modal-rarity {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        .fortune-modal-name {
+            font-size: 30px;
+            font-weight: 700;
+            margin: 8px 0 4px;
+            letter-spacing: 4px;
+        }
+
+        .fortune-modal-divider {
+            width: 60px;
+            height: 2px;
+            margin: 12px auto 16px;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+        }
+
+        .fortune-modal-message-sections {
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+
+        .fortune-modal-section {
+            margin-bottom: 12px;
+            text-align: left;
+        }
+
+        .fortune-modal-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .fortune-modal-section-label {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: rgba(255, 215, 0, 0.6);
+            margin-bottom: 4px;
+            text-align: center;
+        }
+
+        .fortune-modal-section-content {
+            font-size: 14px;
+            line-height: 1.7;
+            color: rgba(220, 210, 240, 0.85);
+            font-style: italic;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border-left: 2px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .fortune-modal-footer {
+            font-size: 13px;
+            color: rgba(200, 190, 220, 0.4);
+            letter-spacing: 1px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            padding-top: 14px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+        }
+
+        .fortune-modal-download {
+            margin-top: 14px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 171, 145, 0.1));
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            color: #ffd700;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 2px;
+        }
+
+        .fortune-modal-download:hover {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 171, 145, 0.15));
+            border-color: rgba(255, 215, 0, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .fortune-modal-download:active {
+            transform: translateY(0);
+        }
+
+        .fortune-card-inner.pop {
+            animation: cardPop 0.5s ease;
+        }
+
+        @keyframes cardPop {
+            0% {
+                transform: rotateY(180deg) scale(0.92);
+            }
+
+            50% {
+                transform: rotateY(180deg) scale(1.04);
+            }
+
+            100% {
+                transform: rotateY(180deg) scale(1);
+            }
+        }
+
+        .fortune-draw-btn .fortune-btn-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        .fortune-star-deco {
+            position: fixed;
+            pointer-events: none;
+            font-size: 20px;
+            opacity: 0.15;
+            animation: floatStar 20s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatStar {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.08;
+            }
+
+            100% {
+                transform: translate(30px, -30px) scale(1.2);
+                opacity: 0.18;
+            }
+        }
+
+        .fortune-sparkle-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            overflow: hidden;
+        }
+
+        .fortune-sparkle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ffd700;
+            box-shadow: 0 0 12px #ffd700;
+            animation: sparkleAnim 1.2s ease-out forwards;
+        }
+
+        @keyframes sparkleAnim {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) scale(0);
+            }
+        }
+
+        .fortune-card-front .fortune-card-message.highlight {
+            animation: msgGlow 0.8s ease 2;
+        }
+
+        @keyframes msgGlow {
+
+            0%,
+            100% {
+                opacity: 0.85;
+            }
+
+            50% {
+                opacity: 1;
+                text-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+            }
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 480px) {
+            .tm-card {
+                padding: 16px 14px 20px;
+                border-radius: 0;
+            }
+
+            .tm-card h1 {
+                font-size: 1rem;
+                margin-bottom: 6px;
+            }
+
+            .tm-card .tm-subtitle {
+                font-size: 0.78rem;
+                margin-bottom: 14px;
+            }
+
+            .compass-wrapper {
+                max-width: min(55vh, 88vw);
+                margin: 0 auto 16px;
+            }
+
+            .info-grid {
+                gap: 12px 12px;
+                margin: 14px 0 16px;
+            }
+
+            .info-item {
+                padding: 8px 14px;
+            }
+
+            .info-item .info-label {
+                font-size: 0.6rem;
+            }
+
+            .info-item .info-value {
+                font-size: 0.95rem;
+            }
+
+            .elevation-bar {
+                margin: 6px 0 10px;
+                height: 6px;
+            }
+
+            .elevation-label {
+                font-size: 0.65rem;
+                margin-bottom: 4px;
+            }
+
+            .time-display-compass {
+                font-size: 0.68rem;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin-top: 8px;
+            }
+
+            .message-box {
+                margin: 12px 0 6px;
+                padding: 6px 14px;
+            }
+
+            .message-box .emotion {
+                font-size: 0.92rem;
+                line-height: 1.6;
+            }
+
+            .tm-view-btn {
+                margin-top: 12px;
+                padding: 8px 18px;
+                font-size: 0.85rem;
+            }
+
+            .fortune-app {
+                padding: 20px 14px 24px;
+                border-radius: 28px;
+            }
+
+            .fortune-header {
+                margin-bottom: 20px;
+                padding-bottom: 16px;
+            }
+
+            .fortune-title {
+                font-size: 20px;
+                letter-spacing: 3px;
+            }
+
+            .fortune-header-right .fortune-time {
+                font-size: 14px;
+            }
+
+            .fortune-card-wrapper {
+                max-width: 320px;
+                margin-bottom: 24px;
+            }
+
+            .fortune-card-front .fortune-card-name {
+                font-size: 24px;
+            }
+
+            .fortune-card-front .fortune-card-message {
+                font-size: 15px;
+                line-height: 1.7;
+            }
+
+            .fortune-draw-btn {
+                font-size: 18px;
+                padding: 15px 24px;
+                max-width: 260px;
+                letter-spacing: 5px;
+            }
+
+            .fortune-history-item {
+                font-size: 12px;
+                padding: 5px 12px;
+            }
+
+            .fortune-modal-box {
+                padding: 28px 20px;
+            }
+
+            .fortune-modal-name {
+                font-size: 26px;
+            }
+
+            .fortune-modal-message {
+                font-size: 15px;
+            }
+        }
+
+        @media (max-height: 700px) {
+            .compass-wrapper {
+                max-width: min(42vh, 70vw);
+            }
+
+            .tm-card {
+                padding: 10px 12px 14px;
+            }
+
+            .info-grid {
+                gap: 8px 12px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .fortune-card-wrapper {
+                max-width: 260px;
+            }
+
+            .fortune-card-front .fortune-card-name {
+                font-size: 20px;
+            }
+
+            .fortune-card-front .fortune-card-message {
+                font-size: 13px;
+                line-height: 1.6;
+            }
+
+            .fortune-card-front .fortune-rarity-badge {
+                font-size: 11px;
+                padding: 3px 10px;
+                top: 12px;
+                right: 12px;
+            }
+        }
+
+        .flight-stats {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #cc9999;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== 星星背景 ===== -->
+    <canvas id="stars-canvas"></canvas>
+
+    <!-- ===== 今日运势按钮 ===== -->
+    <button id="fortuneBtn">
+        <span class="icon">🔮</span>
+        <span class="label">今日运势</span>
+    </button>
+
+    <!-- ===== 返回按钮（运势页面） ===== -->
+    <button id="backBtn" style="display: none;">
+        <span class="icon">←</span>
+        <span class="label">返回</span>
+    </button>
+
+    <!-- ============================================================ -->
+    <!--  页面1：太空红马 · 情绪指引（默认）                           -->
+    <!-- ============================================================ -->
+    <div id="page-compass" class="page-container active">
+        <div class="tm-card">
+            <h1>✦ 赤焰天马 · 此刻方位</h1>
+            <div class="tm-subtitle">每90分钟 · 飞越你的天空</div>
+
+            <div class="compass-wrapper">
+                <canvas id="compass-canvas"></canvas>
+            </div>
+
+            <div class="elevation-bar">
+                <div class="elevation-fill" id="elevationFill"></div>
+            </div>
+            <div class="elevation-label">
+                <span>地平线 0°</span>
+                <span id="elevationText">45°</span>
+                <span>天顶 90°</span>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">方位角</div>
+                    <div class="info-value" id="azimuthValue">-- <small>°</small></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">仰角</div>
+                    <div class="info-value" id="elevationValue">-- <small>°</small></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">当前时间 (本地)</div>
+                    <div class="info-value" id="currentTimeCompass">--:--:--</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">下次过顶时间</div>
+                    <div class="info-value" id="nextOverheadTime">--:--</div>
+                </div>
+            </div>
+
+            <div class="message-box">
+                <div class="emotion" id="emotionMessageCompass">🐎 天马正为你传递星际情绪 …</div>
+            </div>
+
+            <div class="flight-stats">🛸 已完成 0 圈环球飞行 · 累计 0 万公里</div>
+
+            <div class="time-display-compass">
+                <span>🔄 周期 90 分钟</span>
+                <span>⚡ 持续奔跑</span>
+            </div>
+
+            <!-- 全景按钮 -->
+            <button id="viewBtn" class="tm-view-btn">
+                <span class="icon">🔭</span>
+                <span class="label">仰视</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  页面2：赤焰天马 · 全景视图                                    -->
+    <!-- ============================================================ -->
+    <div id="page-compass-full" class="page-container">
+        <div class="tm-card">
+            <h1>✦ 赤焰天马 · 此刻方位</h1>
+            <div class="tm-subtitle">每90分钟 · 飞越你的天空</div>
+
+            <div class="compass-wrapper">
+                <canvas id="compass-full-canvas"></canvas>
+            </div>
+
+            <div class="elevation-bar">
+                <div class="elevation-fill" id="elevationFillFull"></div>
+            </div>
+            <div class="elevation-label">
+                <span>地平线 0°</span>
+                <span id="elevationTextFull">45°</span>
+                <span>天顶 90°</span>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">方位角</div>
+                    <div class="info-value" id="azimuthValueFull">-- <small>°</small></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">仰角</div>
+                    <div class="info-value" id="elevationValueFull">-- <small>°</small></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">当前时间 (本地)</div>
+                    <div class="info-value" id="currentTimeFull">--:--:--</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">下次过顶时间</div>
+                    <div class="info-value" id="nextOverheadTimeFull">--:--</div>
+                </div>
+            </div>
+
+            <div class="message-box">
+                <div class="emotion" id="emotionMessageFull">🐎 天马正为你传递星际情绪 …</div>
+            </div>
+
+            <div class="flight-stats">🛸 已完成 0 圈环球飞行 · 累计 0 万公里</div>
+
+            <div class="time-display-compass">
+                <span>🔄 周期 90 分钟</span>
+                <span>⚡ 持续奔跑</span>
+            </div>
+
+            <!-- 仰视按钮 -->
+            <button id="backViewBtn" class="tm-view-btn">
+                <span class="icon">🌐</span>
+                <span class="label">全景</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  页面3：今日运势 · 灵境抽卡                                    -->
+    <!-- ============================================================ -->
+    <div id="page-card" class="page-container">
+        <div class="fortune-star-deco" style="top:8%;left:5%;">✦</div>
+        <div class="fortune-star-deco" style="bottom:12%;right:6%;animation-delay:-6s;">✦</div>
+        <div class="fortune-star-deco" style="top:40%;right:3%;animation-delay:-12s;font-size:14px;">✦</div>
+        <div class="fortune-star-deco" style="bottom:30%;left:4%;animation-delay:-8s;font-size:16px;">✦</div>
+
+        <div class="fortune-app" id="fortune-app">
+            <div class="fortune-header">
+                <div class="fortune-header-left">
+                    <div class="fortune-title">✦ 灵境抽卡</div>
+                    <div class="fortune-sub">· 一日一签 ·</div>
+                </div>
+                <div class="fortune-header-right">
+                    <div class="fortune-time" id="fortune-currentTime">--:--:--</div>
+                    <div class="fortune-date" id="fortune-currentDate">----年--月--日</div>
+                </div>
+            </div>
+
+            <div class="fortune-card-wrapper" id="fortune-cardWrapper">
+                <div class="fortune-card-inner" id="fortune-cardInner">
+                    <div class="fortune-card-face fortune-card-back">
+                        <div class="back-shine"></div>
+                        <div class="back-pattern">✦ ✦ ✦</div>
+                        <div class="back-label">· 灵 · 境 ·</div>
+                    </div>
+                    <div class="fortune-card-face fortune-card-front fortune-rarity-n" id="fortune-cardFront">
+                        <div class="fortune-card-glow"></div>
+                        <div class="fortune-rarity-badge" id="fortune-rarityBadge">N</div>
+                        <div
+                            style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                            <div class="fortune-card-name" id="fortune-cardName">—</div>
+                            <div class="fortune-card-divider"></div>
+                            <div class="fortune-card-message" id="fortune-cardMessage">点击「抽卡」开启今日灵境</div>
+                        </div>
+                        <div class="fortune-card-footer" id="fortune-cardFooter">✦ 时运 · 天机 ✦</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="fortune-draw-btn" id="fortune-drawBtn">
+                <span class="fortune-btn-shine"></span>
+                <span class="fortune-btn-text" id="fortune-btnText">✦ 抽 卡 ✦</span>
+            </button>
+
+            <div class="fortune-history">
+                <div class="fortune-history-title">
+                    <span>— 灵 境 纪 录 —</span>
+                </div>
+                <div class="fortune-history-list" id="fortune-historyList">
+                    <span class="fortune-history-empty">尚未抽卡，静待缘分</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="fortune-modal-overlay" id="fortune-modalOverlay">
+            <div class="fortune-modal-box" id="fortune-modalBox">
+                <button class="fortune-modal-close" id="fortune-modalClose">✕</button>
+                <div class="fortune-modal-rarity" id="fortune-modalRarity" style="color:#ffd700;">✦ SSR</div>
+                <div class="fortune-modal-name" id="fortune-modalName" style="color:#ffd700;">天命玄鸟</div>
+                <div class="fortune-modal-divider"></div>
+                <div class="fortune-modal-message-sections">
+                    <div class="fortune-modal-section">
+                        <div class="fortune-modal-section-label">福 运</div>
+                        <div class="fortune-modal-section-content" id="fortune-modalFortuneMsg">—</div>
+                    </div>
+                    <div class="fortune-modal-section">
+                        <div class="fortune-modal-section-label">时 辰</div>
+                        <div class="fortune-modal-section-content" id="fortune-modalTimeMsg">—</div>
+                    </div>
+                    <div class="fortune-modal-section">
+                        <div class="fortune-modal-section-label">意 象</div>
+                        <div class="fortune-modal-section-content" id="fortune-modalCardMsg">—</div>
+                    </div>
+                </div>
+                <div class="fortune-modal-footer">
+                    <span id="fortune-modalDate">2026-07-22</span>
+                    <span id="fortune-modalTime">14:30:00</span>
+                    <span id="fortune-modalFortune">福运 105%</span>
+                </div>
+                <button class="fortune-modal-download" id="fortune-modalDownload">⬇ 保存图片</button>
+            </div>
+        </div>
+
+        <div class="fortune-sparkle-container" id="fortune-sparkleContainer"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  JavaScript                                                   -->
+    <!-- ============================================================ -->
+    <script>
+        // 二维码base64数据(140x140px)，避免file://协议canvas污染
+        const QR_CODE_DATA = 'data:image/jpeg;base64,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';
+
+        // ============================================================
+        //  1. 星星背景 (共用)
+        // ============================================================
+        (function initStars() {
+            const canvas = document.getElementById('stars-canvas');
+            const ctx = canvas.getContext('2d');
+            let stars = [];
+            let w, h;
+
+            function resize() {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            const COUNT = window.innerWidth * window.innerHeight / 7000;
+            for (let i = 0; i < COUNT; i++) {
+                stars.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    r: Math.random() * 1.8 + 0.5,
+                    alpha: Math.random() * 0.8 + 0.2,
+                    speed: 0.005 + Math.random() * 0.02,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+
+            function drawStars(time) {
+                ctx.clearRect(0, 0, w, h);
+                const grad = ctx.createRadialGradient(w * 0.5, h * 0.5, 0, w * 0.5, h * 0.5, Math.max(w, h) * 0.8);
+                grad.addColorStop(0, '#141a3a');
+                grad.addColorStop(1, '#05080f');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+
+                for (let s of stars) {
+                    const flicker = 0.6 + 0.4 * Math.sin(time * s.speed + s.phase);
+                    const alpha = s.alpha * flicker;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+                    ctx.fill();
+                    if (s.r > 1.2) {
+                        ctx.shadowColor = 'rgba(200,230,255,0.2)';
+                        ctx.shadowBlur = 10;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+                }
+                requestAnimationFrame(drawStars);
+            }
+            requestAnimationFrame(drawStars);
+        })();
+
+        // ============================================================
+        //  2. 用户首次访问时间记录 & 飞行里程计算
+        // ============================================================
+        (function initFlightStats() {
+            const FIRST_VISIT_KEY = 'satellite_first_visit';
+            const ORBIT_DURATION_MINUTES = 90;
+            const EARTH_CIRCUMFERENCE_KM = 42000;
+
+            function getFirstVisitTime() {
+                let firstVisit = localStorage.getItem(FIRST_VISIT_KEY);
+                if (!firstVisit) {
+                    firstVisit = new Date().toISOString();
+                    localStorage.setItem(FIRST_VISIT_KEY, firstVisit);
+                }
+                return new Date(firstVisit);
+            }
+
+            function calculateFlightStats() {
+                const firstVisit = getFirstVisitTime();
+                const now = new Date();
+                const diffMinutes = (now - firstVisit) / (1000 * 60);
+                const orbits = Math.floor(diffMinutes / ORBIT_DURATION_MINUTES);
+                const totalKm = (orbits * EARTH_CIRCUMFERENCE_KM).toFixed(0);
+                return { orbits, totalKm };
+            }
+
+            function updateFlightStatsDisplay() {
+                const { orbits, totalKm } = calculateFlightStats();
+                document.querySelectorAll('.flight-stats').forEach(el => {
+                    el.textContent = `🛸 已完成 ${orbits} 圈环球飞行 · 累计 ${totalKm} 万公里`;
+                });
+            }
+
+            window.addEventListener('load', () => {
+                updateFlightStatsDisplay();
+                setInterval(updateFlightStatsDisplay, 1000);
+            });
+        })();
+
+        // ============================================================
+        //  3. 页面导航（已删除切换按钮和时钟页面，保留罗盘/全景/运势）
+        // ============================================================
+        (function initNavigation() {
+            const fortuneBtn = document.getElementById('fortuneBtn');
+            const backBtn = document.getElementById('backBtn');
+            const viewBtn = document.getElementById('viewBtn');
+            const backViewBtn = document.getElementById('backViewBtn');
+
+            const pageCompass = document.getElementById('page-compass');
+            const pageCompassFull = document.getElementById('page-compass-full');
+            const pageCard = document.getElementById('page-card');
+
+            let lastPage = 'compass';
+            let compassSubPage = 'compass';
+
+            function showPage(pageName) {
+                pageCompass.classList.remove('active');
+                pageCompassFull.classList.remove('active');
+                pageCard.classList.remove('active');
+
+                document.body.classList.remove('fortune-page');
+
+                fortuneBtn.style.display = 'none';
+                backBtn.style.display = 'none';
+
+                if (pageName === 'compass') {
+                    pageCompass.classList.add('active');
+                    fortuneBtn.style.display = 'flex';
+                    compassSubPage = 'compass';
+                } else if (pageName === 'compass-full') {
+                    pageCompassFull.classList.add('active');
+                    fortuneBtn.style.display = 'flex';
+                    compassSubPage = 'compass-full';
+                } else if (pageName === 'card') {
+                    pageCard.classList.add('active');
+                    backBtn.style.display = 'flex';
+                    document.body.classList.add('fortune-page');
+                }
+
+                setTimeout(() => {
+                    const ev = new Event('resize');
+                    window.dispatchEvent(ev);
+                    if ((pageName === 'compass' || pageName === 'compass-full') && typeof window._updateCompass ===
+                        'function') {
+                        window._updateCompass();
+                    }
+                }, 50);
+            }
+
+            // 今日运势按钮 → 跳转运势页
+            fortuneBtn.addEventListener('click', function () {
+                lastPage = compassSubPage;
+                showPage('card');
+            });
+
+            // 返回按钮 ← 从运势页返回
+            backBtn.addEventListener('click', function () {
+                showPage(lastPage);
+            });
+
+            // 全景按钮：罗盘 → 全景
+            viewBtn.addEventListener('click', function () {
+                showPage('compass-full');
+            });
+
+            // 仰视按钮：全景 → 罗盘
+            backViewBtn.addEventListener('click', function () {
+                showPage('compass');
+            });
+
+            // 默认显示罗盘
+            showPage('compass');
+        })();
+
+        // ============================================================
+        //  4. 太空红马 (罗盘) — 完整保留
+        // ============================================================
+        (function initCompass() {
+            let horseImages = [];
+            let currentFrame = 0;
+            const FRAME_COUNT = 6;
+            const horseImageData = [
+                'horse_0.png',
+                'horse_1.png',
+                'horse_2.png',
+                'horse_3.png',
+                'horse_4.png',
+                'horse_5.png'
+            ];
+            let frameCounter = 0;
+            const FRAME_INTERVAL = 1;
+
+            const canvas = document.getElementById('compass-canvas');
+            const ctx = canvas.getContext('2d');
+
+            const azimuthValue = document.getElementById('azimuthValue');
+            const elevationValue = document.getElementById('elevationValue');
+            const elevationText = document.getElementById('elevationText');
+            const elevationFill = document.getElementById('elevationFill');
+            const currentTime = document.getElementById('currentTimeCompass');
+            const nextOverheadTime = document.getElementById('nextOverheadTime');
+            const emotionMessage = document.getElementById('emotionMessageCompass');
+
+            let size = 0;
+            let prevSatX = 0;
+            let lastFlip = false;
+            const FLIP_THRESHOLD = 0.1;
+
+            function loadHorseImages() {
+                for (let i = 0; i < FRAME_COUNT; i++) {
+                    const img = new Image();
+                    img.src = horseImageData[i];
+                    horseImages.push(img);
+                }
+            }
+            loadHorseImages();
+
+            if (typeof window.userLon === 'undefined') {
+                window.userLon = 120;
+                fetch('https://ip-api.com/json/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            window.userLon = data.lon;
+                        }
+                    })
+                    .catch(() => { });
+            }
+
+            function resizeCanvas() {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                size = rect.width;
+                canvas.width = size * dpr;
+                canvas.height = size * dpr;
+                canvas.style.width = size + 'px';
+                canvas.style.height = size + 'px';
+                ctx.scale(dpr, dpr);
+            }
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                const now = new Date();
+                const { elevation, azimuth } = getSatellitePosition(now);
+                drawCompass(elevation, azimuth);
+            });
+            resizeCanvas();
+
+            function getSatellitePosition(now) {
+                const baseOffset = 30;
+                const lonDiff = 120 - window.userLon;
+                const lonOffsetMinutes = lonDiff * 4;
+                const totalOffset = baseOffset + lonOffsetMinutes;
+
+                let minutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+                minutes = minutes + totalOffset;
+
+                const T = 90;
+                const phase = (minutes % T) / T * 2 * Math.PI;
+                const elevation = 45 + 45 * Math.cos(phase);
+                let azimuth = 360 * (phase / (2 * Math.PI));
+                if (azimuth < 0) azimuth += 360;
+                return { elevation, azimuth, totalOffset };
+            }
+
+            function generateMessage(elevation, azimuth) {
+                if (elevation >= 89.5) {
+                    return "🔥 天马踏顶 · 万星共鸣 · 此刻你与宇宙同频 ✨";
+                }
+                let elMsg = '';
+                if (elevation >= 70) elMsg = '天马行空，壮志凌云 🐎✨';
+                else if (elevation >= 40) elMsg = '骏马奔腾，心潮澎湃 🌟';
+                else if (elevation >= 15) elMsg = '马踏斜阳，沉静蓄力 🌅';
+                else elMsg = '伏枥待发，深藏力量 🌌';
+
+                let azMsg = '';
+                if (azimuth >= 315 || azimuth < 45) azMsg = '北 · 指引方向';
+                else if (azimuth >= 45 && azimuth < 135) azMsg = '东 · 旭日初升';
+                else if (azimuth >= 135 && azimuth < 225) azMsg = '南 · 热烈奔放';
+                else if (azimuth >= 225 && azimuth < 315) azMsg = '西 · 沉淀收获';
+                return `🔥 ${azMsg}，${elMsg}`;
+            }
+
+            function drawRedHorse(ctx, x, y, size, flip) {
+                const img = horseImages[currentFrame];
+                const imgReady = img && img.complete && img.naturalWidth > 0;
+
+                ctx.save();
+                ctx.translate(x, y);
+                if (flip) ctx.scale(-1, 1);
+
+                if (imgReady) {
+                    ctx.shadowColor = 'rgba(255,80,80,0.4)';
+                    ctx.shadowBlur = 30;
+                    ctx.drawImage(img, -size / 2, -size / 2, size, size);
+                    ctx.shadowBlur = 0;
+                } else {
+                    ctx.shadowColor = 'rgba(255,50,50,0.7)';
+                    ctx.shadowBlur = 40;
+                    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size / 2);
+                    gradient.addColorStop(0, '#ff5555');
+                    gradient.addColorStop(0.7, '#cc2222');
+                    gradient.addColorStop(1, '#881111');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `${size * 0.55}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🐎', 0, 0);
+                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                    ctx.font = `${size * 0.12}px sans-serif`;
+                    ctx.fillText('image', 0, size * 0.45);
+                }
+                ctx.restore();
+            }
+
+            function drawCompass(elevation, azimuth) {
+                if (size === 0) return;
+
+                const center = size / 2;
+                const radius = size / 2 - 10;
+                ctx.clearRect(0, 0, size, size);
+
+                const grad = ctx.createRadialGradient(center, center, 0, center, center, radius);
+                grad.addColorStop(0, 'rgba(40,10,10,0.3)');
+                grad.addColorStop(0.7, 'rgba(10,5,20,0.5)');
+                grad.addColorStop(1, 'rgba(0,0,0,0.7)');
+                ctx.beginPath();
+                ctx.arc(center, center, radius, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(180,80,80,0.25)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                for (let i = 0; i < 36; i++) {
+                    const ang = (i / 36) * Math.PI * 2 - Math.PI / 2;
+                    const len = (i % 3 === 0) ? 12 : 6;
+                    const inner = radius - 16;
+                    const outer = inner + len;
+                    ctx.beginPath();
+                    ctx.moveTo(center + inner * Math.cos(ang), center + inner * Math.sin(ang));
+                    ctx.lineTo(center + outer * Math.cos(ang), center + outer * Math.sin(ang));
+                    ctx.strokeStyle = (i % 3 === 0) ? 'rgba(200,120,120,0.5)' : 'rgba(150,80,80,0.2)';
+                    ctx.lineWidth = (i % 3 === 0) ? 2 : 1;
+                    ctx.stroke();
+                }
+
+                const dirs = [{ label: 'N', angle: 0 }, { label: 'E', angle: 90 }, { label: 'S', angle: 180 }, {
+                    label: 'W',
+                    angle: 270
+                }];
+                ctx.font = '14px "Segoe UI", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                for (let d of dirs) {
+                    const rad = (d.angle - 90) * Math.PI / 180;
+                    const x = center + (radius - 28) * Math.cos(rad);
+                    const y = center + (radius - 28) * Math.sin(rad);
+                    ctx.fillStyle = 'rgba(200,150,150,0.6)';
+                    ctx.fillText(d.label, x, y);
+                }
+
+                for (let r of [0.25, 0.5, 0.75]) {
+                    ctx.beginPath();
+                    ctx.arc(center, center, radius * r, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(180,80,80,0.08)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([3, 5]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                const rFactor = 1 - (elevation / 90);
+                const satRadius = radius * Math.max(0, Math.min(1, rFactor));
+                const azRad = (azimuth - 90) * Math.PI / 180;
+                const satX = center + satRadius * Math.cos(azRad);
+                const satY = center + satRadius * Math.sin(azRad);
+
+                const minSize = 0.15;
+                const maxSize = 0.35;
+                const horseSize = radius * (minSize + (maxSize - minSize) * (elevation / 90));
+
+                const isOverhead = elevation >= 89.5;
+                const glowColor = isOverhead ? 'rgba(255,215,0,0.8)' : 'rgba(200,50,50,0.5)';
+                const glowRadius = isOverhead ? horseSize * 2.8 : horseSize * 1.8;
+                const glow = ctx.createRadialGradient(satX, satY, 0, satX, satY, glowRadius);
+                glow.addColorStop(0, glowColor);
+                glow.addColorStop(1, 'rgba(200,50,50,0)');
+                ctx.beginPath();
+                ctx.arc(satX, satY, glowRadius, 0, Math.PI * 2);
+                ctx.fillStyle = glow;
+                ctx.fill();
+
+                if (isOverhead) {
+                    ctx.save();
+                    ctx.translate(satX, satY);
+                    ctx.strokeStyle = 'rgba(255,215,0,0.6)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([4, 6]);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, horseSize * 1.6, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.restore();
+                }
+
+                let flip = lastFlip;
+                if (satX < prevSatX - FLIP_THRESHOLD) {
+                    flip = true;
+                } else if (satX > prevSatX + FLIP_THRESHOLD) {
+                    flip = false;
+                }
+                lastFlip = flip;
+                prevSatX = satX;
+
+                drawRedHorse(ctx, satX, satY, horseSize, flip);
+
+                ctx.beginPath();
+                ctx.moveTo(center - 6, center);
+                ctx.lineTo(center + 6, center);
+                ctx.moveTo(center, center - 6);
+                ctx.lineTo(center, center + 6);
+                ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.font = '10px sans-serif';
+                ctx.fillStyle = 'rgba(180,100,100,0.25)';
+                ctx.textAlign = 'center';
+                ctx.fillText('• 天马轨迹 •', center, size - 6);
+            }
+
+            function updateCompass() {
+                const now = new Date();
+                const { elevation, azimuth, totalOffset } = getSatellitePosition(now);
+
+                const elDeg = elevation.toFixed(1);
+                const azDeg = azimuth.toFixed(1);
+                azimuthValue.innerHTML = `${azDeg} <small>°</small>`;
+                elevationValue.innerHTML = `${elDeg} <small>°</small>`;
+                elevationText.textContent = `${elDeg}°`;
+                elevationFill.style.width = `${elevation}%`;
+
+                const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                currentTime.textContent = timeStr;
+
+                const currentLocalMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+                const T = 90;
+                const adjusted = currentLocalMinutes + totalOffset;
+                const remainder = ((adjusted % T) + T) % T;
+                let delta = (T - remainder) % T;
+                if (delta < 0.05) delta = 0;
+                let nextMinutes = currentLocalMinutes + delta;
+                const nextHours = Math.floor(nextMinutes / 60) % 24;
+                const nextMins = Math.floor(nextMinutes % 60);
+                const nextTimeStr = `${String(nextHours).padStart(2, '0')}:${String(nextMins).padStart(2, '0')}`;
+                if (delta < 0.1) {
+                    nextOverheadTime.textContent = '🌟 正在过顶！';
+                } else {
+                    nextOverheadTime.textContent = nextTimeStr;
+                }
+
+                const msg = generateMessage(elevation, azimuth);
+                emotionMessage.textContent = msg;
+
+                frameCounter++;
+                if (frameCounter >= FRAME_INTERVAL) {
+                    frameCounter = 0;
+                    currentFrame = (currentFrame + 1) % FRAME_COUNT;
+                }
+                drawCompass(elevation, azimuth);
+            }
+
+            window._updateCompass = updateCompass;
+            updateCompass();
+            setInterval(updateCompass, 300);
+        })();
+
+        // ============================================================
+        //  5. 全景视图 — 完整保留
+        // ============================================================
+        (function initCompassFull() {
+            const canvas = document.getElementById('compass-full-canvas');
+            const ctx = canvas.getContext('2d');
+
+            const azimuthValue = document.getElementById('azimuthValueFull');
+            const elevationValue = document.getElementById('elevationValueFull');
+            const elevationText = document.getElementById('elevationTextFull');
+            const elevationFill = document.getElementById('elevationFillFull');
+            const currentTime = document.getElementById('currentTimeFull');
+            const nextOverheadTime = document.getElementById('nextOverheadTimeFull');
+            const emotionMessage = document.getElementById('emotionMessageFull');
+
+            let size = 0;
+            let prevSatX = 0;
+
+            const horseImages = [];
+            const totalFrames = 6;
+            let imagesLoaded = 0;
+
+            function loadImages() {
+                for (let i = 0; i < totalFrames; i++) {
+                    const img = new Image();
+                    img.src = `horse_${i}.png`;
+                    img.onload = () => { imagesLoaded++; };
+                    horseImages.push(img);
+                }
+            }
+            loadImages();
+
+            function resizeCanvas() {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                size = rect.width;
+                canvas.width = size * dpr;
+                canvas.height = size * dpr;
+                canvas.style.width = size + 'px';
+                canvas.style.height = size + 'px';
+                ctx.scale(dpr, dpr);
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            function getSatellitePosition(now) {
+                const baseOffset = 30;
+                const lonDiff = 120 - window.userLon;
+                const lonOffsetMinutes = lonDiff * 4;
+                const totalOffset = baseOffset + lonOffsetMinutes;
+
+                let minutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+                minutes = minutes + totalOffset;
+
+                const T = 90;
+                const phase = (minutes % T) / T * 2 * Math.PI;
+                const elevation = 45 + 45 * Math.cos(phase);
+                let azimuth = 360 * (phase / (2 * Math.PI));
+                if (azimuth < 0) azimuth += 360;
+                return { elevation, azimuth, phase, totalOffset };
+            }
+
+            function generateMessage(elevation, azimuth) {
+                if (elevation >= 89.5) return "🔥 天马踏顶 · 万星共鸣 · 此刻你与宇宙同频 ✨";
+                let elMsg = elevation >= 70 ? '天马行空，壮志凌云 🐎✨' :
+                    elevation >= 40 ? '骏马奔腾，心潮澎湃 🌟' :
+                        elevation >= 15 ? '马踏斜阳，沉静蓄力 🌅' : '伏枥待发，深藏力量 🌌';
+                let azMsg = (azimuth >= 315 || azimuth < 45) ? '北 · 指引方向' :
+                    (azimuth >= 45 && azimuth < 135) ? '东 · 旭日初升' :
+                        (azimuth >= 135 && azimuth < 225) ? '南 · 热烈奔放' : '西 · 沉淀收获';
+                return `🔥 ${azMsg}，${elMsg}`;
+            }
+
+            function drawRedHorse(ctx, x, y, size, flip) {
+                ctx.save();
+                ctx.translate(x, y);
+                if (flip) ctx.scale(-1, 1);
+                const s = size * 0.6;
+
+                ctx.shadowColor = 'rgba(255,80,80,0.5)';
+                ctx.shadowBlur = 15;
+
+                ctx.fillStyle = '#d42a2a';
+                ctx.strokeStyle = '#b01a1a';
+                ctx.lineWidth = 2.0;
+
+                ctx.beginPath();
+                ctx.ellipse(0, 0, s * 0.5, s * 0.25, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.ellipse(s * 0.6, -s * 0.05, s * 0.25, s * 0.18, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s * 0.25, -s * 0.05);
+                ctx.lineTo(s * 0.5, -s * 0.05);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s * 0.7, -s * 0.18);
+                ctx.lineTo(s * 0.8, -s * 0.32);
+                ctx.lineTo(s * 0.9, -s * 0.18);
+                ctx.fill();
+                ctx.stroke();
+
+                const legOffsets = [0.2, -0.1, 0.1, -0.2];
+                const legX = [-0.25, -0.1, 0.1, 0.25];
+                for (let i = 0; i < 4; i++) {
+                    ctx.beginPath();
+                    const lx = legX[i] * s;
+                    const ly = s * 0.25;
+                    const offset = legOffsets[i] * s * 0.2;
+                    ctx.moveTo(lx, ly);
+                    ctx.lineTo(lx + offset * 0.5, ly + s * 0.35);
+                    ctx.stroke();
+                }
+                ctx.beginPath();
+                ctx.moveTo(-s * 0.45, -s * 0.05);
+                ctx.quadraticCurveTo(-s * 0.7, -s * 0.25, -s * 0.6, -s * 0.4);
+                ctx.stroke();
+
+                ctx.shadowColor = 'rgba(255,215,0,0.6)';
+                ctx.shadowBlur = 8;
+                ctx.fillStyle = '#ffd966';
+                ctx.beginPath();
+                ctx.arc(s * 0.65, -s * 0.1, s * 0.06, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.restore();
+            }
+
+            function drawScene(elevation, azimuth, phase) {
+                const center = size / 2;
+                const radius = Math.max(10, size / 2 - 12);
+
+                const grad = ctx.createRadialGradient(center, center, 0, center, center, radius);
+                grad.addColorStop(0, 'rgba(40,10,10,0.3)');
+                grad.addColorStop(0.7, 'rgba(10,5,20,0.5)');
+                grad.addColorStop(1, 'rgba(0,0,0,0.7)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, size, size);
+
+                const earthRadius = radius * 0.65;
+                ctx.beginPath();
+                ctx.arc(center, center, earthRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(180,100,100,0.4)';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([]);
+                ctx.stroke();
+
+                const earthGrad = ctx.createRadialGradient(center - earthRadius * 0.3, center - earthRadius * 0.3, 0, center,
+                    center, earthRadius);
+                earthGrad.addColorStop(0, 'rgba(30,5,15,0.6)');
+                earthGrad.addColorStop(1, 'rgba(10,2,8,0.8)');
+                ctx.beginPath();
+                ctx.arc(center, center, earthRadius, 0, Math.PI * 2);
+                ctx.fillStyle = earthGrad;
+                ctx.fill();
+
+                const rx = earthRadius;
+                const ry = earthRadius * 0.35;
+                ctx.beginPath();
+                ctx.ellipse(center, center, rx, ry, 0, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(200,120,120,0.5)';
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([]);
+                ctx.stroke();
+
+                const orbitRx = earthRadius * 0.45;
+                const orbitRy = earthRadius * 1.35;
+                const angle = 15 * Math.PI / 180;
+                ctx.save();
+                ctx.translate(center, center);
+                ctx.rotate(angle);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, orbitRx, orbitRy, 0, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(200,120,120,0.4)';
+                ctx.lineWidth = 2.0;
+                ctx.setLineDash([7, 7]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.restore();
+
+                const footY = center + ry;
+                const placeholderSize = earthRadius * 0.25;
+                if (horseImages[0] && horseImages[0].complete) {
+                    ctx.save();
+                    ctx.translate(center, footY - placeholderSize * 0.3);
+                    ctx.drawImage(horseImages[0], -placeholderSize / 2, -placeholderSize / 2, placeholderSize,
+                        placeholderSize);
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = 'rgba(100,80,80,0.3)';
+                    ctx.fillRect(center - placeholderSize / 2, footY - placeholderSize, placeholderSize, placeholderSize);
+                    ctx.strokeStyle = 'rgba(200,150,150,0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(center - placeholderSize / 2, footY - placeholderSize, placeholderSize, placeholderSize);
+                    ctx.fillStyle = 'rgba(200,150,150,0.5)';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('等待素材...', center, footY - placeholderSize / 2 + 4);
+                }
+
+                const xOrbit = orbitRx * Math.sin(phase);
+                const yOrbit = -orbitRy * Math.cos(phase);
+                const cosA = Math.cos(angle);
+                const sinA = Math.sin(angle);
+                const satX = center + xOrbit * cosA - yOrbit * sinA;
+                const satY = center + xOrbit * sinA + yOrbit * cosA;
+
+                const isFront = !(azimuth >= 220 && azimuth < 310);
+                const alpha = isFront ? 1.0 : 0.30;
+
+                const horseSize = earthRadius * 0.22;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+
+                if (satY < center - earthRadius * 0.3 && elevation >= 89.5) {
+                    const glow = ctx.createRadialGradient(satX, satY, 0, satX, satY, horseSize * 2.8);
+                    glow.addColorStop(0, 'rgba(255,215,0,0.5)');
+                    glow.addColorStop(1, 'rgba(200,50,50,0)');
+                    ctx.beginPath();
+                    ctx.arc(satX, satY, horseSize * 2.8, 0, Math.PI * 2);
+                    ctx.fillStyle = glow;
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255,215,0,0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([4, 6]);
+                    ctx.beginPath();
+                    ctx.arc(satX, satY, horseSize * 1.6, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                } else {
+                    const glow = ctx.createRadialGradient(satX, satY, 0, satX, satY, horseSize * 1.8);
+                    glow.addColorStop(0, 'rgba(200,50,50,0.3)');
+                    glow.addColorStop(1, 'rgba(200,50,50,0)');
+                    ctx.beginPath();
+                    ctx.arc(satX, satY, horseSize * 1.8, 0, Math.PI * 2);
+                    ctx.fillStyle = glow;
+                    ctx.fill();
+                }
+
+                const frameIndex = Math.floor(Date.now() / 100) % totalFrames;
+                const currentHorseImg = horseImages[frameIndex];
+                const flip = !(satY < center);
+
+                if (currentHorseImg && currentHorseImg.complete) {
+                    ctx.save();
+                    ctx.translate(satX, satY);
+                    if (flip) ctx.scale(-1, 1);
+                    ctx.drawImage(currentHorseImg, -horseSize / 2, -horseSize / 2, horseSize, horseSize);
+                    ctx.restore();
+                } else {
+                    drawRedHorse(ctx, satX, satY, horseSize, flip);
+                }
+                ctx.restore();
+
+                ctx.strokeStyle = 'rgba(200,150,150,0.1)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 4]);
+                ctx.beginPath();
+                ctx.moveTo(center - 10, center);
+                ctx.lineTo(center + 10, center);
+                ctx.moveTo(center, center - 10);
+                ctx.lineTo(center, center + 10);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            let lastTimeUpdate = 0;
+
+            function update(timestamp) {
+                const now = new Date();
+                const { elevation, azimuth, phase, totalOffset } = getSatellitePosition(now);
+
+                if (timestamp - lastTimeUpdate >= 1000) {
+                    const elDeg = elevation.toFixed(1);
+                    const azDeg = azimuth.toFixed(1);
+                    azimuthValue.innerHTML = `${azDeg} <small>°</small>`;
+                    elevationValue.innerHTML = `${elDeg} <small>°</small>`;
+                    elevationText.textContent = `${elDeg}°`;
+                    elevationFill.style.width = `${elevation}%`;
+
+                    const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    currentTime.textContent = timeStr;
+
+                    const currentLocalMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+                    const T = 90;
+                    const adjusted = currentLocalMinutes + totalOffset;
+                    const remainder = ((adjusted % T) + T) % T;
+                    let delta = (T - remainder) % T;
+                    if (delta < 0.05) delta = 0;
+                    let nextMinutes = currentLocalMinutes + delta;
+                    const nextHours = Math.floor(nextMinutes / 60) % 24;
+                    const nextMins = Math.floor(nextMinutes % 60);
+                    const nextTimeStr = `${String(nextHours).padStart(2, '0')}:${String(nextMins).padStart(2, '0')}`;
+                    if (delta < 0.1) nextOverheadTime.textContent = '🌟 正在过顶！';
+                    else nextOverheadTime.textContent = nextTimeStr;
+
+                    const msg = generateMessage(elevation, azimuth);
+                    emotionMessage.textContent = msg;
+
+                    lastTimeUpdate = timestamp;
+                }
+
+                drawScene(elevation, azimuth, phase);
+                requestAnimationFrame(update);
+            }
+
+            requestAnimationFrame(update);
+            window.addEventListener('resize', () => resizeCanvas());
+        })();
+
+        // ============================================================
+        //  6. 今日运势 · 灵境抽卡 — 完整保留
+        // ============================================================
+        (function initFortune() {
+            const CARDS = {
+                SSR: [
+                    { name: '天马踏星', msg: '天马踏星，光耀九州。命格天成，所愿皆成，大吉大利。' },
+                    { name: '龙马腾云', msg: '龙马腾云，瑞霭缭绕。风云际会，飞黄腾达，上上大吉。' },
+                    { name: '赤兔追月', msg: '赤兔追月，光华璀璨。机缘将至，万事亨通，大吉昌隆。' },
+                    { name: '汗血凌云', msg: '汗血凌云，紫气东来。天道酬勤，功成名就，大吉至尊。' },
+                    { name: '紫微高照', msg: '紫微高照，吉星护体。贵人相助，步步高升，大吉大贵。' },
+                    { name: '北斗指南', msg: '北斗指南，方向明晰。拨云见日，前程似锦，大吉大富。' },
+                    { name: '银河骏驰', msg: '银河骏驰，星芒万道。顺遂无碍，名利双收，大吉大耀。' },
+                    { name: '天枢运转', msg: '天枢运转，生机勃发。鸿运当头，事业腾达，大吉大兴。' },
+                    { name: '参商相会', msg: '参商相会，姻缘天赐。珠联璧合，鸾凤和鸣，大吉大喜。' },
+                    { name: '星芒璀璨', msg: '星芒璀璨，祥瑞毕臻。财运亨通，富甲一方，大吉大昌。' },
+                ],
+                SR: [
+                    { name: '伯乐识马', msg: '伯乐识马，慧眼初开。良遇将至，明珠不昧，渐入佳境。' },
+                    { name: '青鸾振翅', msg: '青鸾振翅，祥云为伴。姻缘初现，两相知遇，上吉良缘。' },
+                    { name: '朱雀衔丹', msg: '朱雀衔丹，瑞光流转。佳音将至，喜事临门，可期有望。' },
+                    { name: '玄鹤延年', msg: '玄鹤延年，松风煮茶。身心俱安，康健如初，中吉进益。' },
+                    { name: '喜鹊登梅', msg: '喜鹊登梅，暗香浮动。喜事临门，笑口常开，渐佳可期。' },
+                    { name: '锦鲤跃池', msg: '锦鲤跃池，碧波漾金。财运初现，小有所成，渐入坦途。' },
+                    { name: '鸿雁传书', msg: '鸿雁传书，关山飞渡。思念有寄，音讯可期，中吉良缘。' },
+                    { name: '鸳鸯戏水', msg: '鸳鸯戏水，荷塘春暖。姻缘和合，两相情愿，上吉良缘。' },
+                    { name: '蝶舞花间', msg: '蝶舞花间，春意正浓。良缘天赐，情投意合，渐佳可期。' },
+                    { name: '蝉鸣高柳', msg: '蝉鸣高柳，夏风正盛。声名远播，前程似锦，可期有望。' },
+                ],
+                R: [
+                    { name: '蹄疾步稳', msg: '蹄疾步稳，不骄不躁。循序渐进，稳中有进。' },
+                    { name: '鞍马劳思', msg: '鞍马劳思，不辞辛劳。踏实前行，终有所成。' },
+                    { name: '辔头初整', msg: '辔头初整，整装待发。脚踏实地，终会达成。' },
+                    { name: '缰绳在手', msg: '缰绳在手，从容驾驭。循序渐进，小有收获。' },
+                    { name: '厩中秣马', msg: '厩中秣马，蓄势待发。厚积薄发，稳中有进。' },
+                    { name: '枥下催鞭', msg: '枥下催鞭，时不我待。勤能补拙，渐有起色。' },
+                    { name: '秣马厉兵', msg: '秣马厉兵，枕戈待旦。稳扎稳打，终有所成。' },
+                    { name: '驰驱有度', msg: '驰驱有度，不疾不徐。平安顺遂，平稳顺利。' },
+                    { name: '策马观云', msg: '策马观云，悠然自得。知足常乐，小有进益。' },
+                    { name: '奔蹄赴远', msg: '奔蹄赴远，志在千里。坚持不懈，终会达成。' },
+                ],
+                N: [
+                    { name: '伏枥待发', msg: '老骥伏枥，志在千里。积蓄力量，静待时机，来日方长。' },
+                    { name: '困厩思出', msg: '骏马困厩，未展其能。当寻出路，不可沉沦，需慎行。' },
+                    { name: '瘦马加餐', msg: '瘦马骨嶙，步履蹒跚。补充实力，徐徐图之，需调整。' },
+                    { name: '老马识途', msg: '老马识途，不待鞭策。循循善诱，不急不躁，需耐心。' },
+                    { name: '驽马十驾', msg: '驽马十驾，功在不舍。锲而不舍，终有所成，宜守不宜进。' },
+                    { name: '疲马休整', msg: '疲马汗流，气喘吁吁。当休养生，不可强为，需注意。' },
+                    { name: '踯躅歧路', msg: '骏马踯躅，徘徊歧路。当机立断，不可犹豫，莫强求。' },
+                    { name: '徘徊星途', msg: '徘徊星途，四顾茫然。认准方向，坚定前行，不可急躁。' },
+                    { name: '踟蹰不前', msg: '踟蹰不前，意乱情迷。权衡轻重，量力而行，宜守不宜进。' },
+                    { name: '枯叶归根', msg: '枯叶飘零，归根护本。修身养性，固本培元，宜守不宜进。' },
+                ],
+            };
+
+            const RARITY_CONFIG = {
+                SSR: { label: 'SSR', prob: 0.10, color: '#ffd700', class: 'fortune-rarity-ssr', emoji: '✦' },
+                SR: { label: 'SR', prob: 0.30, color: '#b388ff', class: 'fortune-rarity-sr', emoji: '◆' },
+                R: { label: 'R', prob: 0.50, color: '#64b5f6', class: 'fortune-rarity-r', emoji: '●' },
+                N: { label: 'N', prob: 0.10, color: '#90a4ae', class: 'fortune-rarity-n', emoji: '○' },
+            };
+
+            function getTimePeriod() {
+                const h = new Date().getHours();
+                if (h >= 5 && h < 9) return 'dawn';
+                if (h >= 9 && h < 13) return 'morning';
+                if (h >= 13 && h < 18) return 'afternoon';
+                if (h >= 18 && h < 21) return 'dusk';
+                if (h >= 21 && h < 24) return 'night';
+                return 'midnight';
+            }
+
+            const TIME_FORTUNE = {
+                dawn: { label: '🌅 破晓 · 新生', msgs: ['晨光熹微，万物复苏，鸿运初开。', '黎明将至，紫气东来，吉光初现。'] },
+                morning: { label: '☀️ 朝阳 · 蓬勃', msgs: ['朝阳正盛，光芒万丈，吉星高照。', '红日东升，朝气蓬勃，万事亨通。'] },
+                afternoon: { label: '🌤️ 午昼 · 和煦', msgs: ['日正当中，阳气最盛，宜奋发图强。', '天朗气清，惠风和畅，诸事皆宜。'] },
+                dusk: { label: '🌇 暮色 · 温柔', msgs: ['暮色苍茫，晚霞绚烂，福祸相依。', '夕阳无限好，只是近黄昏，宜珍惜当下。'] },
+                night: { label: '🌙 星夜 · 深邃', msgs: ['星夜沉沉，月光如水，宜静观其变。', '繁星点点，银月高悬，思绪清明。'] },
+                midnight: { label: '🌌 子夜 · 玄秘', msgs: ['子夜幽玄，万籁俱寂，暗藏天机。', '深宵静谧，宇宙无垠，玄机暗藏。'] },
+            };
+
+            function getLunarAndCalendar() {
+                const now = new Date();
+                const day = now.getDate();
+                const month = now.getMonth() + 1;
+                const year = now.getFullYear();
+                const seed = (year * 10000 + month * 100 + day) % 1000;
+                const lunarDay = ((day + 7) % 30) + 1;
+                const lunarMonth = ((month + 3) % 12) + 1;
+                const lunarYear = year - 4;
+                const yiPool = ['祭祀', '祈福', '求嗣', '开光', '出行', '嫁娶', '纳财', '入宅', '安床', '动土'];
+                const jiPool = ['动土', '安葬', '诉讼', '远行', '破土', '斋醮', '伐木', '作灶', '行丧', '开市'];
+                const yiCount = 2 + (seed % 2);
+                const jiCount = 2 + ((seed + 3) % 2);
+                const yiList = [];
+                const jiList = [];
+                const usedYi = new Set();
+                const usedJi = new Set();
+                for (let i = 0; i < yiCount; i++) {
+                    let idx = (seed + i * 7) % yiPool.length;
+                    let tryCount = 0;
+                    while (usedYi.has(idx) && tryCount < 20) {
+                        idx = (idx + 1) % yiPool.length;
+                        tryCount++;
+                    }
+                    usedYi.add(idx);
+                    yiList.push(yiPool[idx]);
+                }
+                for (let i = 0; i < jiCount; i++) {
+                    let idx = (seed + i * 11 + 5) % jiPool.length;
+                    let tryCount = 0;
+                    while (usedJi.has(idx) && tryCount < 20) {
+                        idx = (idx + 1) % jiPool.length;
+                        tryCount++;
+                    }
+                    usedJi.add(idx);
+                    jiList.push(jiPool[idx]);
+                }
+                let fortune = 1.0;
+                const goodWords = ['祭祀', '祈福', '求嗣', '开光', '嫁娶', '纳财'];
+                const badWords = ['动土', '安葬', '诉讼', '破土', '伐木', '作灶'];
+                for (const item of yiList) { if (goodWords.includes(item)) fortune += 0.05; }
+                for (const item of jiList) { if (badWords.includes(item)) fortune -= 0.05; }
+                fortune = Math.min(1.2, Math.max(0.8, fortune));
+                return { lunar: `${lunarYear}年${lunarMonth}月${lunarDay}日`, yi: yiList, ji: jiList, fortune: fortune };
+            }
+
+            function getFortuneMsg(fortune, rarity) {
+                const level = fortune >= 1.05 ? 'high' : fortune >= 0.95 ? 'mid' : 'low';
+                const pool = {
+                    high: {
+                        ssr: ['紫气东来，吉星高照，诸事皆宜，大吉昌隆。', '贵人扶持，机遇将至，宏图大展，前程无量。'],
+                        sr: ['今日运势上佳，宜出行、嫁娶，诸事顺遂。', '福星高照，贵人暗助，事业有进，渐入佳境。'],
+                        r: ['今日平顺，宜纳财、入宅，稳中求进。', '气运平稳，不求惊喜，但求无过，踏实前行。'],
+                        n: ['今日宜慎，忌远行、诉讼，多加小心。', '运势略滞，谨言慎行，莫强求，静待柳暗花明。']
+                    },
+                    mid: {
+                        ssr: ['今日运势向好，宜祭祀、纳财，利谋事。', '吉星轻度拱照，稳步前进，终有所成。'],
+                        sr: ['今日运势平稳，宜祈福、出行，循序渐进。', '无大起大落，踏实做事，终会有报。'],
+                        r: ['今日平顺，宜嫁娶、安床，守正待时。', '平平常常，不温不火，做好本分，自有收获。'],
+                        n: ['今日需留意，忌动土、伐木，安分守己。', '防微杜渐，戒急用忍，今日不宜冒险。']
+                    },
+                    low: {
+                        ssr: ['今日虽有微澜，但终归吉，宜静不宜动。', '偶有波折，不足为虑，守得云开见月明。'],
+                        sr: ['今日运势偏静，忌远行、破土，以静制动。', '诸事不顺时，更需沉住气，莫乱了阵脚。'],
+                        r: ['今日宜守不宜攻，忌诉讼、作灶，慎之。', '运势低迷，谨言慎行，平安为上。'],
+                        n: ['今日大忌，忌安葬、行丧，务必谨慎。', '祸不单行时，更需小心，处处留意，方可化解。']
+                    }
+                };
+                const rKey = rarity.toLowerCase();
+                const msgs = pool[level] && pool[level][rKey] ? pool[level][rKey] : pool[level]['n'];
+                return msgs[Math.floor(Math.random() * msgs.length)];
+            }
+
+            function drawCard() {
+                const cal = getLunarAndCalendar();
+                const fortune = cal.fortune;
+                let adjustedSSR = RARITY_CONFIG.SSR.prob * fortune;
+                let adjustedSR = RARITY_CONFIG.SR.prob * Math.sqrt(fortune);
+                let adjustedR = RARITY_CONFIG.R.prob;
+                let adjustedN = RARITY_CONFIG.N.prob / Math.max(fortune, 0.8);
+                const total = adjustedSSR + adjustedSR + adjustedR + adjustedN;
+                adjustedSSR /= total;
+                adjustedSR /= total;
+                adjustedR /= total;
+                adjustedN /= total;
+                let r = Math.random();
+                let selectedRarity = 'N';
+                if (r < adjustedSSR) selectedRarity = 'SSR';
+                else if (r < adjustedSSR + adjustedSR) selectedRarity = 'SR';
+                else if (r < adjustedSSR + adjustedSR + adjustedR) selectedRarity = 'R';
+                else selectedRarity = 'N';
+                const pool = CARDS[selectedRarity];
+                const card = pool[Math.floor(Math.random() * pool.length)];
+                const period = getTimePeriod();
+                const timeInfo = TIME_FORTUNE[period];
+                const timeMsg = timeInfo.msgs[Math.floor(Math.random() * timeInfo.msgs.length)];
+                const fortuneMsg = getFortuneMsg(fortune, selectedRarity);
+                return {
+                    rarity: selectedRarity,
+                    card: card,
+                    timeLabel: timeInfo.label,
+                    timeMsg: timeMsg,
+                    fortuneMsg: fortuneMsg,
+                    lunar: cal.lunar,
+                    yi: cal.yi,
+                    ji: cal.ji,
+                    fortune: fortune,
+                    timestamp: new Date().toLocaleString(),
+                };
+            }
+
+            const STORAGE_KEY = 'lingjing_history';
+            const LAST_DATE_KEY = 'lingjing_lastdate';
+
+            function getTodayStr() {
+                const d = new Date();
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            }
+
+            function loadHistory() {
+                try { const data = localStorage.getItem(STORAGE_KEY); return data ? JSON.parse(data) : []; } catch { return []; }
+            }
+
+            function saveHistory(history) { localStorage.setItem(STORAGE_KEY, JSON.stringify(history)); }
+
+            function getLastDrawDate() { return localStorage.getItem(LAST_DATE_KEY) || ''; }
+
+            function setLastDrawDate(date) { localStorage.setItem(LAST_DATE_KEY, date); }
+
+            const cardInner = document.getElementById('fortune-cardInner');
+            const cardFront = document.getElementById('fortune-cardFront');
+            const cardName = document.getElementById('fortune-cardName');
+            const cardMessage = document.getElementById('fortune-cardMessage');
+            const rarityBadge = document.getElementById('fortune-rarityBadge');
+            const cardFooter = document.getElementById('fortune-cardFooter');
+            const drawBtn = document.getElementById('fortune-drawBtn');
+            const btnText = document.getElementById('fortune-btnText');
+            const historyList = document.getElementById('fortune-historyList');
+            const sparkleContainer = document.getElementById('fortune-sparkleContainer');
+
+            const modalOverlay = document.getElementById('fortune-modalOverlay');
+            const modalClose = document.getElementById('fortune-modalClose');
+            const modalRarity = document.getElementById('fortune-modalRarity');
+            const modalName = document.getElementById('fortune-modalName');
+            const modalFortuneMsg = document.getElementById('fortune-modalFortuneMsg');
+            const modalTimeMsg = document.getElementById('fortune-modalTimeMsg');
+            const modalCardMsg = document.getElementById('fortune-modalCardMsg');
+            const modalDate = document.getElementById('fortune-modalDate');
+            const modalTime = document.getElementById('fortune-modalTime');
+            const modalFortune = document.getElementById('fortune-modalFortune');
+            const modalDownload = document.getElementById('fortune-modalDownload');
+
+            const currentTimeEl = document.getElementById('fortune-currentTime');
+            const currentDateEl = document.getElementById('fortune-currentDate');
+
+            let history = [];
+            let isDrawing = false;
+            let todayStr = getTodayStr();
+            let currentModalData = null;
+
+            function updateHeader() {
+                const now = new Date();
+                const h = String(now.getHours()).padStart(2, '0');
+                const m = String(now.getMinutes()).padStart(2, '0');
+                const s = String(now.getSeconds()).padStart(2, '0');
+                currentTimeEl.textContent = `${h}:${m}:${s}`;
+                currentDateEl.textContent =
+                    `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 周${'日一二三四五六'[now.getDay()]}`;
+            }
+
+            function resetCardDisplay() {
+                cardInner.classList.remove('flipped', 'pop');
+                cardFront.className = 'fortune-card-face fortune-card-front fortune-rarity-n';
+                rarityBadge.textContent = 'N';
+                cardName.textContent = '—';
+                cardMessage.textContent = '点击「抽卡」开启今日灵境';
+                cardFooter.textContent = '✦ 时运 · 天机 ✦';
+                cardMessage.classList.remove('highlight');
+            }
+
+            function updateDrawButton() {
+                const lastDate = getLastDrawDate();
+                if (lastDate === todayStr) {
+                    drawBtn.disabled = true;
+                    drawBtn.classList.add('today-done');
+                    btnText.textContent = '✓ 今日已抽';
+                } else {
+                    drawBtn.disabled = false;
+                    drawBtn.classList.remove('today-done');
+                    btnText.textContent = '✦ 抽 卡 ✦';
+                }
+            }
+
+            function renderHistory() {
+                if (history.length === 0) {
+                    historyList.innerHTML = '<span class="fortune-history-empty">尚未抽卡，静待缘分</span>';
+                    return;
+                }
+                const configMap = {
+                    SSR: { color: '#ffd700', emoji: '✦' },
+                    SR: { color: '#b388ff', emoji: '◆' },
+                    R: { color: '#64b5f6', emoji: '●' },
+                    N: { color: '#90a4ae', emoji: '○' },
+                };
+                let html = '';
+                for (let i = 0; i < history.length && i < 20; i++) {
+                    const item = history[i];
+                    const c = configMap[item.rarity] || configMap.N;
+                    html += `
+                            <div class="fortune-history-item" data-index="${i}">
+                                <span style="color:${c.color}">${c.emoji}</span>
+                                <span class="h-rarity" style="color:${c.color}">${item.label}</span>
+                                <span class="h-name">${item.name}</span>
+                            </div>
+                        `;
+                }
+                historyList.innerHTML = html;
+                historyList.querySelectorAll('.fortune-history-item').forEach(el => {
+                    el.addEventListener('click', function () {
+                        const idx = parseInt(this.dataset.index);
+                        if (!isNaN(idx) && idx < history.length) showModal(idx);
+                    });
+                });
+            }
+
+            function showModal(index) {
+                const item = history[index];
+                if (!item) return;
+                currentModalData = item;
+                const config = RARITY_CONFIG[item.rarity] || RARITY_CONFIG.N;
+                modalRarity.textContent = `${config.emoji} ${config.label}`;
+                modalRarity.style.color = config.color;
+                modalName.textContent = item.name;
+                modalName.style.color = config.color;
+                modalFortuneMsg.textContent = item.fortuneMsg || '—';
+                modalTimeMsg.textContent = item.timeMsg || '—';
+                modalCardMsg.textContent = item.cardMsg || '—';
+                modalDate.textContent = item.date || '未知日期';
+                modalTime.textContent = item.time || '';
+                modalFortune.textContent = item.fortune ? `福运 ${(item.fortune * 100).toFixed(0)}%` : '';
+                modalOverlay.classList.add('active');
+            }
+
+            function closeModal() { modalOverlay.classList.remove('active'); }
+
+            function loadQRCode() {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = () => reject(new Error('二维码加载失败'));
+                    if (typeof QR_CODE_DATA !== 'undefined') img.src = QR_CODE_DATA;
+                    else img.src = 'QRcode_temp.jpg';
+                });
+            }
+
+            function drawRoundRect(ctx, x, y, w, h, r, fillStyle) {
+                ctx.fillStyle = fillStyle;
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.lineTo(x + w - r, y);
+                ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                ctx.lineTo(x + w, y + h - r);
+                ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                ctx.lineTo(x + r, y + h);
+                ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                ctx.lineTo(x, y + r);
+                ctx.quadraticCurveTo(x, y, x + r, y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            function drawGradientBg(ctx, x, y, w, h) {
+                const gradient = ctx.createLinearGradient(x, y, x + w, y + h);
+                gradient.addColorStop(0, '#1e2445');
+                gradient.addColorStop(1, '#151a35');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                const r = 24;
+                ctx.moveTo(x + r, y);
+                ctx.lineTo(x + w - r, y);
+                ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                ctx.lineTo(x + w, y + h - r);
+                ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                ctx.lineTo(x + r, y + h);
+                ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                ctx.lineTo(x, y + r);
+                ctx.quadraticCurveTo(x, y, x + r, y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            function isWeChatBrowser() {
+                const ua = navigator.userAgent.toLowerCase();
+                return /MicroMessenger/i.test(ua);
+            }
+
+            async function generateCardImage() {
+                if (!currentModalData) return null;
+                try {
+                    const config = RARITY_CONFIG[currentModalData.rarity] || RARITY_CONFIG.N;
+                    const scale = 3;
+                    const cardW = 640,
+                        cardH = 800,
+                        pad = 60;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = cardW * scale;
+                    canvas.height = cardH * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.scale(scale, scale);
+                    drawGradientBg(ctx, 0, 0, cardW, cardH);
+                    ctx.fillStyle = config.color;
+                    ctx.font = 'bold 36px "Segoe UI", system-ui, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`${config.emoji} ${config.label}`, cardW / 2, pad);
+                    ctx.font = 'bold 52px "Segoe UI", system-ui, sans-serif';
+                    ctx.shadowColor = config.color + '40';
+                    ctx.shadowBlur = 20;
+                    ctx.fillText(currentModalData.name, cardW / 2, pad + 70);
+                    ctx.shadowBlur = 0;
+                    const lineY = pad + 130;
+                    const lineGrad = ctx.createLinearGradient(cardW / 2 - 80, lineY, cardW / 2 + 80, lineY);
+                    lineGrad.addColorStop(0, 'transparent');
+                    lineGrad.addColorStop(0.5, config.color);
+                    lineGrad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = lineGrad;
+                    ctx.fillRect(cardW / 2 - 80, lineY, 160, 3);
+                    ctx.fillStyle = 'rgba(220, 230, 255, 0.85)';
+                    ctx.font = '24px "Segoe UI", system-ui, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'top';
+                    const sections = [
+                        { label: '福运', content: currentModalData.fortuneMsg },
+                        { label: '时辰', content: currentModalData.timeMsg },
+                        { label: '意象', content: currentModalData.cardMsg },
+                    ];
+                    const maxWidth = cardW - 120;
+                    const lineHeight = 36;
+                    let textY = lineY + 30;
+                    for (const section of sections) {
+                        if (!section.content) continue;
+                        ctx.fillStyle = config.color;
+                        ctx.font = 'bold 20px "Segoe UI", system-ui, sans-serif';
+                        ctx.fillText(section.label, cardW / 2, textY);
+                        textY += 28;
+                        ctx.fillStyle = 'rgba(220, 230, 255, 0.85)';
+                        ctx.font = '22px "Segoe UI", system-ui, sans-serif';
+                        let currentLine = '';
+                        const chars = section.content.split('');
+                        for (let i = 0; i < chars.length; i++) {
+                            const testLine = currentLine + chars[i];
+                            if (ctx.measureText(testLine).width > maxWidth && currentLine.length > 0) {
+                                ctx.fillText(currentLine, cardW / 2, textY);
+                                currentLine = chars[i];
+                                textY += lineHeight;
+                            } else {
+                                currentLine = testLine;
+                            }
+                        }
+                        if (currentLine) {
+                            ctx.fillText(currentLine, cardW / 2, textY);
+                            textY += lineHeight;
+                        }
+                        textY += 15;
+                    }
+                    const bottomY = cardH - 120;
+                    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(60, bottomY - 20);
+                    ctx.lineTo(cardW - 60, bottomY - 20);
+                    ctx.stroke();
+                    ctx.fillStyle = 'rgba(200, 190, 220, 0.5)';
+                    ctx.font = '24px "Segoe UI", system-ui, sans-serif';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(currentModalData.date, 80, bottomY);
+                    ctx.textAlign = 'center';
+                    ctx.fillText(currentModalData.time, cardW / 2, bottomY);
+                    try {
+                        const qrImg = await loadQRCode();
+                        const qrSize = 140,
+                            qrX = cardW - qrSize - 40,
+                            qrY = cardH - qrSize - 40;
+                        drawRoundRect(ctx, qrX, qrY, qrSize, qrSize, 16, '#ffffff');
+                        ctx.drawImage(qrImg, qrX + 8, qrY + 8, qrSize - 16, qrSize - 16);
+                        ctx.fillStyle = 'rgba(255, 215, 0, 0.7)';
+                        ctx.font = '20px "Segoe UI", system-ui, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText('扫码关注', qrX + qrSize / 2, qrY - 8);
+                    } catch (qrErr) { console.error('二维码加载失败:', qrErr); }
+                    return canvas.toDataURL('image/png');
+                } catch (err) { console.error('生成图片失败:', err); return null; }
+            }
+
+            function showImageForLongPress(dataUrl) {
+                const overlay = document.createElement('div');
+                overlay.style.cssText =
+                    'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+                const tip = document.createElement('div');
+                tip.style.cssText =
+                    'color:#ffd700;font-size:16px;margin-bottom:15px;text-align:center;text-shadow:0 0 10px rgba(255,215,0,0.5);';
+                tip.innerHTML = '📱 <b>长按下方图片保存到手机</b><br><span style="font-size:13px;color:#aaa;">点击空白处关闭</span>';
+                const img = document.createElement('img');
+                img.src = dataUrl;
+                img.style.cssText = 'max-width:90%;max-height:75vh;border-radius:16px;box-shadow:0 0 40px rgba(255,215,0,0.3);';
+                overlay.appendChild(tip);
+                overlay.appendChild(img);
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', () => overlay.remove());
+            }
+
+            async function saveAsImage() {
+                if (!currentModalData) return;
+                try {
+                    const dataUrl = await generateCardImage();
+                    if (!dataUrl) { alert('生成图片失败，请重试'); return; }
+                    if (isWeChatBrowser()) showImageForLongPress(dataUrl);
+                    else {
+                        const link = document.createElement('a');
+                        link.download = `天马灵境_${currentModalData.date}_${currentModalData.name}.png`;
+                        link.href = dataUrl;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                } catch (err) {
+                    console.error('保存图片失败:', err);
+                    alert('保存图片失败，请重试');
+                }
+            }
+
+            modalDownload.addEventListener('click', saveAsImage);
+
+            function performDraw() {
+                if (isDrawing) return;
+                const lastDate = getLastDrawDate();
+                if (lastDate === todayStr) { alert('今日已抽过灵签，明日再来吧 🌙'); return; }
+                isDrawing = true;
+                drawBtn.disabled = true;
+                btnText.textContent = '✦ 灵 境 降 临 ✦';
+                if (cardInner.classList.contains('flipped')) cardInner.classList.remove('flipped');
+                setTimeout(() => {
+                    const result = drawCard();
+                    const config = RARITY_CONFIG[result.rarity];
+                    cardFront.className = `fortune-card-face fortune-card-front ${config.class}`;
+                    rarityBadge.textContent = `${config.emoji} ${config.label}`;
+                    cardName.textContent = result.card.name;
+                    cardMessage.textContent = result.fortuneMsg + ' ' + result.timeMsg + ' ' + result.card.msg;
+                    cardFooter.textContent = `${result.timeLabel}  ·  ${result.timestamp.split(',')[0]}`;
+                    cardInner.classList.add('flipped');
+                    setTimeout(() => {
+                        cardInner.classList.add('pop');
+                        setTimeout(() => cardInner.classList.remove('pop'), 600);
+                    }, 150);
+                    cardMessage.classList.remove('highlight');
+                    setTimeout(() => cardMessage.classList.add('highlight'), 500);
+                    // 粒子特效
+                    const container = sparkleContainer;
+                    const colors = ['#ffd700', '#ffec8b', '#fff4c0', '#b388ff', '#64b5f6', '#ffab91'];
+                    for (let i = 0; i < 28 + Math.floor(Math.random() * 20); i++) {
+                        const el = document.createElement('div');
+                        el.className = 'fortune-sparkle';
+                        const size = 4 + Math.random() * 8;
+                        const x = 20 + Math.random() * 60,
+                            y = 20 + Math.random() * 60;
+                        const tx = (Math.random() - 0.5) * 400,
+                            ty = (Math.random() - 0.5) * 400;
+                        el.style.cssText = `
+                                left: ${x}%; top: ${y}%;
+                                width: ${size}px; height: ${size}px;
+                                background: ${colors[Math.floor(Math.random() * colors.length)]};
+                                box-shadow: 0 0 ${size * 2}px ${colors[Math.floor(Math.random() * colors.length)]};
+                                --tx: ${tx}px; --ty: ${ty}px;
+                                animation-duration: ${0.8 + Math.random() * 0.6}s;
+                                animation-delay: ${Math.random() * 0.3}s;
+                            `;
+                        container.appendChild(el);
+                        setTimeout(() => el.remove(), 1500);
+                    }
+                    const now = new Date();
+                    const dateStr =
+                        `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                    const timeStr = now.toLocaleTimeString();
+                    const entry = {
+                        date: dateStr,
+                        time: timeStr,
+                        name: result.card.name,
+                        rarity: result.rarity,
+                        label: config.label,
+                        fortuneMsg: result.fortuneMsg,
+                        timeMsg: result.timeMsg,
+                        cardMsg: result.card.msg,
+                        fortune: result.fortune,
+                    };
+                    history.unshift(entry);
+                    if (history.length > 50) history.pop();
+                    saveHistory(history);
+                    setLastDrawDate(todayStr);
+                    renderHistory();
+                    updateDrawButton();
+                    setTimeout(() => {
+                        isDrawing = false;
+                        drawBtn.disabled = false;
+                        if (getLastDrawDate() === todayStr) {
+                            drawBtn.classList.add('today-done');
+                            btnText.textContent = '✓ 今日已抽';
+                        } else btnText.textContent = '✦ 再 抽 一 次 ✦';
+                    }, 400);
+                }, 500);
+            }
+
+            function init() {
+                history = loadHistory();
+                renderHistory();
+                todayStr = getTodayStr();
+                updateDrawButton();
+                const lastDate = getLastDrawDate();
+                if (lastDate === todayStr && history.length > 0) {
+                    const todayEntry = history.find(item => item.date === todayStr);
+                    if (todayEntry) {
+                        const config = RARITY_CONFIG[todayEntry.rarity] || RARITY_CONFIG.N;
+                        cardFront.className = `fortune-card-face fortune-card-front ${config.class}`;
+                        rarityBadge.textContent = `${config.emoji} ${config.label}`;
+                        cardName.textContent = todayEntry.name;
+                        cardMessage.textContent = (todayEntry.fortuneMsg || '') + ' ' + (todayEntry.timeMsg || '') + ' ' + (
+                            todayEntry.cardMsg || '');
+                        cardFooter.textContent = `今日灵签  ·  ${todayEntry.time || ''}`;
+                        cardInner.classList.add('flipped');
+                        cardMessage.classList.add('highlight');
+                    }
+                }
+                updateHeader();
+                setInterval(updateHeader, 1000);
+                drawBtn.addEventListener('click', performDraw);
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === ' ' || e.key === 'Space') {
+                        e.preventDefault();
+                        performDraw();
+                    }
+                });
+                modalClose.addEventListener('click', closeModal);
+                modalOverlay.addEventListener('click', function (e) { if (e.target === this) closeModal(); });
+            }
+            init();
+        })();
+    </script>
+</body>
+
+</html>
